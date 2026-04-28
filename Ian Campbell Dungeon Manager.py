@@ -13,15 +13,17 @@ class Character:
         self.defense = defense
         self.block = False
         self.shield = 2
+        self.shieldScaling = 0.5
         self.mMana = mana
         self.cMana = 0
         self.bleedStacks = 0
         self.bleedDamage = 0
         self.wPoison = 0
         self.poisonStacks = 0
-        self.pTypes = ["Health", "Mana", "Poison"]
-        self.pDesc = ["Restore a large portion of Health.", "Start next battle with full Mana.", "Poison weapon for next battle."]
-        self.pQuant = [1, 0, 0]
+        self.healthPotion = {"Name": "Health", "Desc": "Restore a large portion of Health.", "Quant": 1}
+        self.manaPotion = {"Name": "Mana", "Desc": "Start next battle with full Mana.", "Quant": 0}
+        self.poisonPotion = {"Name": "Poison", "Desc": "Poison weapon for next battle.", "Quant": 0}
+        self.pList = [self.healthPotion, self.manaPotion, self.poisonPotion]
     
     def status(self):
         print(f"{self.name}: {self.cHealth}/{self.mHealth} health, {self.cMana}/{self.mMana} mana")
@@ -103,6 +105,7 @@ class Character:
 class Berserker(Character):
     def __init__(self, name, health, attack, defense, mana):
         super().__init__(name, health, attack, defense, mana)
+        self.job = "Berserker"
         self.manaCost = 4
         self.level = 1
     def rend(self, target):
@@ -131,12 +134,13 @@ class Berserker(Character):
         print(f"Health Points: {self.cHealth}/{self.mHealth}")
         print(f"Max Mana: {self.mMana}")
         print(f"Attack Power: {self.power}")
-        print(f"Defense: {self.defense}")
+        print(f"Defense: {self.defense}; Shield: Rank {(self.shield-2)/self.shieldScaling}")
         print(f"Special Attack: \n Rend: Causes the target to bleed for two turns.")
 
 class Assassin(Character):
     def __init__(self, name, health, attack, defense, mana):
         super().__init__(name, health, attack, defense, mana)
+        self.job = "Assassin"
         self.manaCost = 3
         self.level = 1
     def pDart(self, target):
@@ -163,12 +167,13 @@ class Assassin(Character):
         print(f"Health Points: {self.cHealth}/{self.mHealth}")
         print(f"Max Mana: {self.mMana}")
         print(f"Attack Power: {self.power}")
-        print(f"Defense: {self.defense}")
+        print(f"Defense: {self.defense}; Shield: Rank {(self.shield-2)/self.shieldScaling}")
         print(f"Special Attack: \n Poison Dart: Afflicts the target with poison relative to Mana spent.")
 
 class Paladin(Character):
     def __init__(self, name, health, attack, defense, mana):
         super().__init__(name, health, attack, defense, mana)
+        self.job = "Paladin"        
         self.manaCostA = 2
         self.manaCostB = 7
         self.level = 1
@@ -209,7 +214,7 @@ class Paladin(Character):
         print(f"Health Points: {self.cHealth}/{self.mHealth}")
         print(f"Max Mana: {self.mMana}")
         print(f"Attack Power: {self.power}")
-        print(f"Defense: {self.defense}")
+        print(f"Defense: {self.defense}; Shield: Rank {(self.shield-2)/self.shieldScaling}")
         print(f"Special Attack: \n Smite: Scorch the target with holy light, piercing defenses.")
         print(f"Spell: \n Heal Prayer: Restores {self.name}'s health, and cures bleed and poison.")       
 
@@ -324,7 +329,7 @@ class Cultist(Character):
             self.mMana += 1
             self.mRegen(1)
         target.bleedStacks += 3
-        target.bleedDamage += math.ceil(damage * 0.25)
+        target.bleedDamage += math.ceil(damage * 0.4)
         print(f"{target.name} is bleeding!")      
     def actionSelect(self):
         self.choice = random.randint(1, self.aggro)
@@ -361,17 +366,17 @@ class Cultist(Character):
 #Inventory
 def showInv(player):
     print("Potion Types:")
-    for item in range(len(player.pTypes)):
-        print(f"{player.pTypes[item]}: {player.pQuant[item]} owned.")
-        print(f"-{player.pDesc[item]}")
+    for item in player.pList:
+        print(f"{item["Name"]}: {item["Quant"]} owned.")
+        print(f"-{item["Desc"]}")
 
 def useItem(player):
     showInv(player)
     choice = str.capitalize(input("Which potion do you want to use? Type the name of the potion, or hit enter to skip: "))
-    for item in range(len(player.pTypes)):
-        if choice == player.pTypes[item]:
-            if player.pQuant[item] > 0:
-                player.pQuant[item] -= 1
+    for item in player.pList:
+        if choice == item["Name"]:
+            if item["Quant"] > 0:
+                item["Quant"] -= 1
                 if choice == "Health":
                     player.hRegen(player.mHealth/2)
                     print(f"{player.name} regained Health!")
@@ -390,14 +395,17 @@ def useItem(player):
 
 
 def Loot(player):
-    loot = random.randint(1, 7)
-    if loot >= 4:
-        potion = random.choice(range(len(player.pTypes)))
-        player.pQuant[potion] += 1
-        print(f"{player.name} found a {player.pTypes[potion]} Potion!")
-    elif loot >= 3:
+    loot = random.randint(1, 10)
+    if loot >= 6:
+        potion = random.choice(player.pList)
+        potion["Quant"] += 1
+        print(f"{player.name} found a {potion["Name"]} Potion!")
+    elif loot >= 5:
         player.defense += 1
         print(f"{player.name} found an armor upgrade! Defense +1!")
+    elif loot >= 3:
+        player.shield += player.shieldScaling
+        print(f"{player.name} found a shield upgrade! Shield Rank +1!")
     else:
         player.mMana += 1
         print(f"{player.name} found a Mana enchantment! Max Mana +1!")
@@ -464,7 +472,7 @@ def spawnEnemy(tier, difficulty, group):
         aggro = aggros[tier]
         enemy = Snake(name, health, power, defense, mana, aggro)
     elif group == 3:
-        names = ["Cultist", "Big Cultist", "Mega Cultist"]
+        names = ["Cultist", "Cultist Cain", "Jim the Voidpriest"]
         name = names[tier]
         healths = [40, 60, 80, 100]
         if difficulty < 20:
@@ -526,6 +534,29 @@ def combat(player, tier, difficulty, group):
         print("Game Over!")
         return(1)
         
+#Save and Load
+def saveGame(player):
+    with open(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"), "w") as x:
+        x.write(f"{player.name};{player.job};{player.mHealth};{player.cHealth};{player.power};{player.defense};{player.shield};{player.mMana};{player.cMana};{player.pList[0]["Quant"]};{player.pList[1]["Quant"]};{player.pList[2]["Quant"]};{player.level}")
+def loadGame(player):
+    with open(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"), "r") as x:
+        for line in x:
+            stats = line.split(";")
+            if stats[1] == "Berserker":
+                player = Berserker(stats[0],int(stats[2]),int(stats[4]),int(stats[5]),int(stats[7]))
+            elif stats[1] == "Assassin":
+                player = Assassin(stats[0],int(stats[2]),int(stats[4]),int(stats[5]),int(stats[7]))
+            elif stats[1] == "Paladin":
+                player = Paladin(stats[0],int(stats[2]),int(stats[4]),int(stats[5]),int(stats[7]))
+            player.cHealth = int(stats[3])
+            player.shield = float(stats[6])
+            player.cMana = int(stats[8])
+            player.level = int(stats[12])
+            for type in player.pList:
+                type["Quant"] = int(stats[9 + player.pList.index(type)])
+        return player
+
+
 
 #Character Creation:
 realjob = 0
@@ -571,9 +602,9 @@ while quit == 0:
     elif choice == "3":
         useItem(player)
     elif choice == "4":
-        LevelUp(player)
+        saveGame(player)
     elif choice == "5":
-        pass
+        player = loadGame(player)
     else:
         confirm = str.lower(input("Are you sure you want to quit? y/n: "))
         if confirm == "y":
