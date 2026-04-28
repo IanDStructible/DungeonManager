@@ -13,7 +13,7 @@ class Character:
         self.defense = defense
         self.block = False
         self.shield = 2
-        self.shieldScaling = 0.5
+        self.shieldScaling = 0.2
         self.mMana = mana
         self.cMana = 0
         self.bleedStacks = 0
@@ -314,6 +314,9 @@ class Cultist(Character):
     def profaneSmite(self, target):
         damage = self.strike(target)
         unholyDamage = (self.cMana * 2) + damage
+        if target.block == True:
+            unholyDamage /= target.shield
+            unholyDamage = math.ceil(unholyDamage)
         target.cHealth -= unholyDamage
         print(f"The Void consumes {target.name} for {unholyDamage} damage!")
         self.cMana = 0  
@@ -378,7 +381,7 @@ def useItem(player):
             if item["Quant"] > 0:
                 item["Quant"] -= 1
                 if choice == "Health":
-                    player.hRegen(player.mHealth/2)
+                    player.hRegen(player.mHealth * 0.4)
                     print(f"{player.name} regained Health!")
                 if choice == "Mana":
                     player.mRegen(player.mMana)
@@ -454,6 +457,10 @@ def spawnEnemy(tier, difficulty, group):
         aggros = [8, 10, 12]
         aggro = aggros[tier]
         enemy = Goblin(name, health, power, defense, mana, aggro)
+        if difficulty > 30:
+            enemy.shield = 4
+        elif difficulty > 20:
+            enemy.shield = 3
     elif group == 2:
         names = ["Snake", "Weird Snake Joe", "Trogdor the Burninator"]
         name = names[tier]
@@ -466,8 +473,13 @@ def spawnEnemy(tier, difficulty, group):
         power = pows[tier]
         defs = [0, 1, 2]
         defense = defs[tier]
-        manas = [7, 11, 15]
-        mana = manas[tier]
+        manas = [7, 11, 15, 18, 21]
+        if difficulty < 20:
+            mana = manas[tier]
+        elif difficulty < 30:
+            mana = manas[tier + 1]
+        else:
+            mana = manas[tier + 2]
         aggros = [8, 10, 12]
         aggro = aggros[tier]
         enemy = Snake(name, health, power, defense, mana, aggro)
@@ -481,16 +493,24 @@ def spawnEnemy(tier, difficulty, group):
             health = healths[tier + 1]
         pows = [5, 6, 7]
         power = pows[tier]
-        defs = [1, 2, 3]
-        defense = defs[tier]
+        defs = [1, 2, 3, 4, 5]
+        if difficulty < 20:
+            defense = defs[tier]
+        elif difficulty < 30:
+            defense = defs[tier + 1]
+        else:
+            defense = defs[tier + 2]
         manas = [4, 6, 8]
         mana = manas[tier]
         aggros = [8, 10, 12]
         aggro = aggros[tier]
         enemy = Cultist(name, health, power, defense, mana, aggro)
     if difficulty >= 30:
-       pScaling = (difficulty - 27) / 3
+       pScaling = (difficulty - 28) / 2
        enemy.power += math.ceil(pScaling)
+    if difficulty >= 30:
+       aScaling = (difficulty - 27) / 3
+       enemy.defense += math.ceil(aScaling)
     if difficulty >= 30:
         hScaling = ((difficulty - 28) * 0.1) + 1
         enemy.mHealth = math.ceil(enemy.mHealth * hScaling)
@@ -521,17 +541,22 @@ def combat(player, tier, difficulty, group):
             battleEnd = 1
     time.sleep(2)
     if battleEnd == 1: 
-        print("Victory!")
-        time.sleep(2)
+        input("Victory! Press enter to see what you won:")
         player.battleWon()
         for count in range(tier+1):
             Loot(player)
+        time.sleep(3)
         for count in range(tier+1):
             LevelUp(player)
         player.cMana = 0
         return(0)
     if battleEnd == 2:
         print("Game Over!")
+        time.sleep(1)
+        print(f"Slain by: {enemy.name}")
+        time.sleep(1)
+        print("Your stats:")
+        player.charsheet()
         return(1)
         
 #Save and Load
@@ -588,17 +613,17 @@ while quit == 0:
         player.charsheet()
     elif choice == "2":
         group = random.randint(1, 3)
-        difficulty = 6 + player.level
+        difficulty = 5 + player.level
         event = random.randint(1, difficulty)
         if event >= 15:
             quit = combat(player, 2, difficulty, group)
-        elif event >= 10:
+        elif event >= 9:
             quit = combat(player, 1, difficulty, group)
-        elif event >= 6:
+        elif event >= 4:
+            quit = combat(player, 0, difficulty, group)
+        else:    
             print(f"{player.name} discovered a treasure chest! ")
             Loot(player)
-        else:    
-            quit = combat(player, 0, difficulty, group)
     elif choice == "3":
         useItem(player)
     elif choice == "4":
