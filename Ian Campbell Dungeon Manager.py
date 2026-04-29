@@ -13,7 +13,7 @@ class Character:
         self.defense = defense
         self.block = False
         self.shield = 2
-        self.shieldScaling = 0.2
+        self.shieldScaling = 0.3
         self.mMana = mana
         self.cMana = 0
         self.bleedStacks = 0
@@ -134,7 +134,7 @@ class Berserker(Character):
         print(f"Health Points: {self.cHealth}/{self.mHealth}")
         print(f"Max Mana: {self.mMana}")
         print(f"Attack Power: {self.power}")
-        print(f"Defense: {self.defense}; Shield: Rank {(self.shield-2)/self.shieldScaling}")
+        print(f"Defense: {self.defense}; Shield: Rank {math.trunc((self.shield-2)/self.shieldScaling)}")
         print(f"Special Attack: \n Rend: Causes the target to bleed for two turns.")
 
 class Assassin(Character):
@@ -167,7 +167,7 @@ class Assassin(Character):
         print(f"Health Points: {self.cHealth}/{self.mHealth}")
         print(f"Max Mana: {self.mMana}")
         print(f"Attack Power: {self.power}")
-        print(f"Defense: {self.defense}; Shield: Rank {(self.shield-2)/self.shieldScaling}")
+        print(f"Defense: {self.defense}; Shield: Rank {math.trunc((self.shield-2)/self.shieldScaling)}")
         print(f"Special Attack: \n Poison Dart: Afflicts the target with poison relative to Mana spent.")
 
 class Paladin(Character):
@@ -214,7 +214,7 @@ class Paladin(Character):
         print(f"Health Points: {self.cHealth}/{self.mHealth}")
         print(f"Max Mana: {self.mMana}")
         print(f"Attack Power: {self.power}")
-        print(f"Defense: {self.defense}; Shield: Rank {(self.shield-2)/self.shieldScaling}")
+        print(f"Defense: {self.defense}; Shield: Rank {math.trunc((self.shield-2)/self.shieldScaling)}")
         print(f"Special Attack: \n Smite: Scorch the target with holy light, piercing defenses.")
         print(f"Spell: \n Heal Prayer: Restores {self.name}'s health, and cures bleed and poison.")       
 
@@ -241,7 +241,7 @@ class Goblin(Character):
             print(f"{self.name} added more poison to their weapon!")    
     def actionSelect(self):
         self.choice = random.randint(1, self.aggro)
-        if self.choice >= 11:
+        if self.choice >= 12:
             print(f"{self.name} is fiddling with something...")
         elif self.choice >= 5:
             print(f"{self.name} takes an aggressive stance.")
@@ -250,7 +250,7 @@ class Goblin(Character):
         else:
             print(f"{self.name} looks lost.")         
     def action(self, target):
-        if self.choice >= 11:
+        if self.choice >= 12:
             self.cMana -= 1
             self.poisonWeapon()
         elif self.choice >= 8:
@@ -407,7 +407,8 @@ def Loot(player):
         player.defense += 1
         print(f"{player.name} found an armor upgrade! Defense +1!")
     elif loot >= 3:
-        player.shield += player.shieldScaling
+        newShield = player.shield + player.shieldScaling
+        player.shield = round(newShield, 1)
         print(f"{player.name} found a shield upgrade! Shield Rank +1!")
     else:
         player.mMana += 1
@@ -448,19 +449,22 @@ def spawnEnemy(tier, difficulty, group):
             health = healths[tier]
         else:
             health = healths[tier + 1]
-        pows = [6, 7, 8]
-        power = pows[tier]
+        pows = [7, 8, 9, 10]
+        if difficulty < 20:
+            power = pows[tier]
+        else:
+            power = pows[tier + 1]
         defs = [2, 3, 4]
         defense = defs[tier]
         manas = [4, 7, 9]
         mana = manas[tier]
-        aggros = [8, 10, 12]
+        aggros = [8, 10, 13]
         aggro = aggros[tier]
         enemy = Goblin(name, health, power, defense, mana, aggro)
-        if difficulty > 30:
-            enemy.shield = 4
-        elif difficulty > 20:
-            enemy.shield = 3
+        if difficulty >= 30:
+            enemy.aggro += 2
+        elif difficulty >= 20:
+            enemy.aggro += 1
     elif group == 2:
         names = ["Snake", "Weird Snake Joe", "Trogdor the Burninator"]
         name = names[tier]
@@ -469,8 +473,11 @@ def spawnEnemy(tier, difficulty, group):
             health = healths[tier]
         else:
             health = healths[tier + 1]
-        pows = [3, 4, 5]
-        power = pows[tier]
+        pows = [4, 5, 6, 7]
+        if difficulty < 20:
+            power = pows[tier]
+        else:
+            power = pows[tier + 1]
         defs = [0, 1, 2]
         defense = defs[tier]
         manas = [7, 11, 15, 18, 21]
@@ -491,8 +498,11 @@ def spawnEnemy(tier, difficulty, group):
             health = healths[tier]
         else:
             health = healths[tier + 1]
-        pows = [5, 6, 7]
-        power = pows[tier]
+        pows = [6, 7, 8, 9]
+        if difficulty < 20:
+            power = pows[tier]
+        else:
+            power = pows[tier + 1]
         defs = [1, 2, 3, 4, 5]
         if difficulty < 20:
             defense = defs[tier]
@@ -515,6 +525,10 @@ def spawnEnemy(tier, difficulty, group):
         hScaling = ((difficulty - 28) * 0.1) + 1
         enemy.mHealth = math.ceil(enemy.mHealth * hScaling)
         enemy.cHealth = math.ceil(enemy.cHealth * hScaling)
+    if difficulty > 30:
+        enemy.shield = 4
+    elif difficulty > 20:
+        enemy.shield = 3
     return enemy
     
 
@@ -539,13 +553,13 @@ def combat(player, tier, difficulty, group):
             else: battleEnd = 2
         else: 
             battleEnd = 1
-    time.sleep(2)
+    time.sleep(1)
     if battleEnd == 1: 
         input("Victory! Press enter to see what you won:")
         player.battleWon()
         for count in range(tier+1):
             Loot(player)
-        time.sleep(3)
+        time.sleep(2)
         for count in range(tier+1):
             LevelUp(player)
         player.cMana = 0
