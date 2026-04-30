@@ -97,6 +97,7 @@ class Character:
         if self.cHealth <= 0:
             self.cHealth = 1
         self.bleedStacks = 0
+        self.bleedDamage = 0
         self.poisonStacks = 0
         self.wPoison = 0
         
@@ -399,11 +400,11 @@ def useItem(player):
 
 def Loot(player):
     loot = random.randint(1, 10)
-    if loot >= 6:
+    if loot >= 5:
         potion = random.choice(player.pList)
         potion["Quant"] += 1
         print(f"{player.name} found a {potion["Name"]} Potion!")
-    elif loot >= 5:
+    elif loot >= 4:
         player.defense += 1
         print(f"{player.name} found an armor upgrade! Defense +1!")
     elif loot >= 3:
@@ -516,11 +517,11 @@ def spawnEnemy(tier, difficulty, group):
         aggro = aggros[tier]
         enemy = Cultist(name, health, power, defense, mana, aggro)
     if difficulty >= 30:
-       pScaling = (difficulty - 28) / 2
+       pScaling = (difficulty - 27) / 3
        enemy.power += math.ceil(pScaling)
     if difficulty >= 30:
-       aScaling = (difficulty - 27) / 3
-       enemy.defense += math.ceil(aScaling)
+       dScaling = (difficulty - 25) / 5
+       enemy.defense += math.ceil(dScaling)
     if difficulty >= 30:
         hScaling = ((difficulty - 28) * 0.1) + 1
         enemy.mHealth = math.ceil(enemy.mHealth * hScaling)
@@ -544,6 +545,7 @@ def combat(player, tier, difficulty, group):
         eAlive = enemy.turnStart()
         if eAlive == True:
             enemy.actionSelect()
+            print("")
             time.sleep(2)
             pAlive = player.turnStart()
             if pAlive == True:
@@ -571,30 +573,47 @@ def combat(player, tier, difficulty, group):
         time.sleep(1)
         print("Your stats:")
         player.charsheet()
+        time.sleep(2)
+        print("Your winnings:")
+        showInv(player)
         return(1)
         
 #Save and Load
 def saveGame(player):
-    with open(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"), "w") as x:
-        x.write(f"{player.name};{player.job};{player.mHealth};{player.cHealth};{player.power};{player.defense};{player.shield};{player.mMana};{player.cMana};{player.pList[0]["Quant"]};{player.pList[1]["Quant"]};{player.pList[2]["Quant"]};{player.level}")
+    overwrite = os.path.exists(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"))
+    if overwrite == True:
+        confirm = input("Are you sure you want to overwrite your save? y/n: ")
+    if overwrite == False or confirm == "y":
+        with open(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"), "w") as x:
+            x.write(f"{player.name};{player.job};{player.mHealth};{player.cHealth};{player.power};{player.defense};{player.shield};{player.mMana};{player.cMana};{player.pList[0]["Quant"]};{player.pList[1]["Quant"]};{player.pList[2]["Quant"]};{player.level}")
+        print("Game saved.")
+    else:
+        print("Save cancelled.")
 def loadGame(player):
-    with open(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"), "r") as x:
-        for line in x:
-            stats = line.split(";")
-            if stats[1] == "Berserker":
-                player = Berserker(stats[0],int(stats[2]),int(stats[4]),int(stats[5]),int(stats[7]))
-            elif stats[1] == "Assassin":
-                player = Assassin(stats[0],int(stats[2]),int(stats[4]),int(stats[5]),int(stats[7]))
-            elif stats[1] == "Paladin":
-                player = Paladin(stats[0],int(stats[2]),int(stats[4]),int(stats[5]),int(stats[7]))
-            player.cHealth = int(stats[3])
-            player.shield = float(stats[6])
-            player.cMana = int(stats[8])
-            player.level = int(stats[12])
-            for type in player.pList:
-                type["Quant"] = int(stats[9 + player.pList.index(type)])
-        return player
-
+    exists = os.path.exists(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"))
+    if exists == False:
+        print("No save data available.")
+    else:
+        confirm = input("Are you sure you want to load your saved game? y/n: ")
+        if confirm == "y":
+            with open(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"), "r") as x:
+                for line in x:
+                    stats = line.split(";")
+                    if stats[1] == "Berserker":
+                        player = Berserker(stats[0],int(stats[2]),int(stats[4]),int(stats[5]),int(stats[7]))
+                    elif stats[1] == "Assassin":
+                        player = Assassin(stats[0],int(stats[2]),int(stats[4]),int(stats[5]),int(stats[7]))
+                    elif stats[1] == "Paladin":
+                        player = Paladin(stats[0],int(stats[2]),int(stats[4]),int(stats[5]),int(stats[7]))
+                    player.cHealth = int(stats[3])
+                    player.shield = float(stats[6])
+                    player.cMana = int(stats[8])
+                    player.level = int(stats[12])
+                    for type in player.pList:
+                        type["Quant"] = int(stats[9 + player.pList.index(type)])
+        else:
+            print("Load cancelled.")
+    return player
 
 
 #Character Creation:
@@ -627,7 +646,7 @@ while quit == 0:
         player.charsheet()
     elif choice == "2":
         group = random.randint(1, 3)
-        difficulty = 5 + player.level
+        difficulty = 4 + player.level
         event = random.randint(1, difficulty)
         if event >= 15:
             quit = combat(player, 2, difficulty, group)
@@ -635,9 +654,26 @@ while quit == 0:
             quit = combat(player, 1, difficulty, group)
         elif event >= 4:
             quit = combat(player, 0, difficulty, group)
-        else:    
+        elif event >= 2:    
             print(f"{player.name} discovered a treasure chest! ")
             Loot(player)
+        else:
+            print(f"{player.name} doesn't find anything interesting.")
+            time.sleep(1)
+            print(f"Bored with their exploration, {player.name} does some training.")
+            time.sleep(2)
+            print("Just...")
+            time.sleep(1)
+            print("a...")
+            time.sleep(2)
+            print("few...")
+            time.sleep(2)
+            print("more...")
+            time.sleep(3)
+            print("reps...")
+            time.sleep(4)
+            print("Done!")
+            LevelUp(player)            
     elif choice == "3":
         useItem(player)
     elif choice == "4":
