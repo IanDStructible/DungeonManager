@@ -13,7 +13,7 @@ class Character:
         self.defense = defense
         self.block = False
         self.shield = 2
-        self.shieldScaling = 0.3
+        self.shieldScaling = 0.2
         self.mMana = mana
         self.cMana = 0
         self.bleedStacks = 0
@@ -24,6 +24,7 @@ class Character:
         self.manaPotion = {"Name": "Mana", "Desc": "Start next battle with full Mana.", "Quant": 0}
         self.poisonPotion = {"Name": "Poison", "Desc": "Poison weapon for next battle.", "Quant": 0}
         self.pList = [self.healthPotion, self.manaPotion, self.poisonPotion]
+        self.gimmick = 0
     
     def status(self):
         print(f"{self.name}: {self.cHealth}/{self.mHealth} health, {self.cMana}/{self.mMana} mana")
@@ -189,6 +190,7 @@ class Paladin(Character):
         self.hRegen(misHealth*0.8)
         self.cMana -= self.manaCostB
         self.bleedStacks = 0
+        self.bleedDamage = 0
         self.poisonStacks = 0
         print(f"{self.name}'s wounds close!")
     def action(self, target):
@@ -398,8 +400,7 @@ def useItem(player):
                 print(f"{player.name} doesn't have any of those.")
 
 
-def Loot(player):
-    loot = random.randint(1, 10)
+def Loot(player, loot):
     if loot >= 5:
         potion = random.choice(player.pList)
         potion["Quant"] += 1
@@ -419,7 +420,7 @@ def Loot(player):
 
 def LevelUp(player):
     player.level += 1
-    print(f"{player.name} reached level {player.level}")
+    print(f"{player.name} reached level {player.level}!")
     valid = 0
     while valid == 0:
         valid = 1
@@ -437,6 +438,26 @@ def LevelUp(player):
         else:
             valid = 0
             print("Please type 1, 2, or 3 to select one of the given options.")
+
+def bored(player):
+    print(f"{player.name} doesn't find anything interesting.")
+    time.sleep(1)
+    print(f"Bored with their exploration, {player.name} does some training.")
+    time.sleep(2)            
+    if player.gimmick == 0:
+        print("Just...")
+        time.sleep(1)
+        print("a...")
+        time.sleep(2)
+        print("few...")
+        time.sleep(2)
+        print("more...")
+        time.sleep(3)
+        print("reps...")
+        time.sleep(4)
+        print("Done!")
+        player.gimmick = 1
+    LevelUp(player)       
     
 
 #Combat
@@ -560,7 +581,7 @@ def combat(player, tier, difficulty, group):
         input("Victory! Press enter to see what you won:")
         player.battleWon()
         for count in range(tier+1):
-            Loot(player)
+            Loot(player, random.randint(1, 10))
         time.sleep(2)
         for count in range(tier+1):
             LevelUp(player)
@@ -585,7 +606,7 @@ def saveGame(player):
         confirm = input("Are you sure you want to overwrite your save? y/n: ")
     if overwrite == False or confirm == "y":
         with open(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"), "w") as x:
-            x.write(f"{player.name};{player.job};{player.mHealth};{player.cHealth};{player.power};{player.defense};{player.shield};{player.mMana};{player.cMana};{player.pList[0]["Quant"]};{player.pList[1]["Quant"]};{player.pList[2]["Quant"]};{player.level}")
+            x.write(f"{player.name};{player.job};{player.mHealth};{player.cHealth};{player.power};{player.defense};{player.shield};{player.mMana};{player.cMana};{player.pList[0]["Quant"]};{player.pList[1]["Quant"]};{player.pList[2]["Quant"]};{player.level};{player.gimmick}")
         print("Game saved.")
     else:
         print("Save cancelled.")
@@ -609,6 +630,7 @@ def loadGame(player):
                     player.shield = float(stats[6])
                     player.cMana = int(stats[8])
                     player.level = int(stats[12])
+                    player.gimmick = int(stats[13])
                     for type in player.pList:
                         type["Quant"] = int(stats[9 + player.pList.index(type)])
         else:
@@ -616,20 +638,40 @@ def loadGame(player):
     return player
 
 
+
+
 #Character Creation:
-realjob = 0
-while realjob == 0:
-    realjob = 1
-    job = input("Choose your class:\n 1. Berserker\n 2. Assassin\n 3. Paladin\n 1-3: ")
-    if job == "1":
-        player = Berserker(input("Name your Character: "), 50, 8, 0, 7)
-    elif job == "2":
-        player = Assassin(input("Name your Character: "), 40, 10, 0, 6)
-    elif job == "3":
-        player = Paladin(input("Name your Character: "), 50, 7, 2, 7)
+def charMaker():
+    realjob = 0
+    while realjob == 0:
+        realjob = 1
+        job = input("Choose your class:\n 1. Berserker\n 2. Assassin\n 3. Paladin\n 1-3: ")
+        if job == "1":
+            player = Berserker(input("Name your Avatar: "), 50, 8, 0, 7)
+        elif job == "2":
+            player = Assassin(input("Name your Avatar: "), 40, 10, 0, 6)
+        elif job == "3":
+            player = Paladin(input("Name your Avatar: "), 50, 7, 2, 7)
+        else:
+            print("Please choose a number from the list.")
+            realjob = 0
+    return player
+
+
+
+#Startup
+print("Welcome to your dungeon management job!")
+print("You'll be slaying monsters daily, and looting their various potions as payment.")
+print("Of course, you won't be in any danger. You'll be creating an avatar to do that for you!")
+player = 0
+while player == 0:
+    choice = input("Do you want to load an existing avatar? y/n: ")
+    if choice == "y":
+        player = loadGame(player)
     else:
-        print("Please choose a number from the list.")
-        realjob = 0
+        player = charMaker()
+print("Let's get to it!")
+
 
 #Main Menu:
 quit = 0
@@ -656,30 +698,19 @@ while quit == 0:
             quit = combat(player, 0, difficulty, group)
         elif event >= 2:    
             print(f"{player.name} discovered a treasure chest! ")
-            Loot(player)
+            for count in range(math.ceil(difficulty / 15)):
+                Loot(player, random.randint(1, 10))
         else:
-            print(f"{player.name} doesn't find anything interesting.")
-            time.sleep(1)
-            print(f"Bored with their exploration, {player.name} does some training.")
-            time.sleep(2)
-            print("Just...")
-            time.sleep(1)
-            print("a...")
-            time.sleep(2)
-            print("few...")
-            time.sleep(2)
-            print("more...")
-            time.sleep(3)
-            print("reps...")
-            time.sleep(4)
-            print("Done!")
-            LevelUp(player)            
+            bored(player)
     elif choice == "3":
         useItem(player)
     elif choice == "4":
         saveGame(player)
     elif choice == "5":
         player = loadGame(player)
+    elif choice == "f":
+        Loot(player, 3)
+        print(player.shield)
     else:
         confirm = str.lower(input("Are you sure you want to quit? y/n: "))
         if confirm == "y":
