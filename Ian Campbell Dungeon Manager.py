@@ -603,6 +603,10 @@ def combat(player, tier, difficulty, group):
 def saveGame(player):
     overwrite = os.path.exists(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"))
     if overwrite == True:
+        with open(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"), "r") as x:
+            for line in x:
+                stats = line.split(";")
+                print(f"Character in saved game: {stats[0]}, level {stats[12]} {stats[1]}.")    
         confirm = input("Are you sure you want to overwrite your save? y/n: ")
     if overwrite == False or confirm == "y":
         with open(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"), "w") as x:
@@ -615,6 +619,10 @@ def loadGame(player):
     if exists == False:
         print("No save data available.")
     else:
+        with open(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"), "r") as x:
+            for line in x:
+                stats = line.split(";")
+                print(f"Character in saved game: {stats[0]}, level {stats[12]} {stats[1]}.")
         confirm = input("Are you sure you want to load your saved game? y/n: ")
         if confirm == "y":
             with open(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"), "r") as x:
@@ -698,7 +706,7 @@ while quit == 0:
             quit = combat(player, 0, difficulty, group)
         elif event >= 2:    
             print(f"{player.name} discovered a treasure chest! ")
-            for count in range(math.ceil(difficulty / 15)):
+            for count in range(math.ceil(difficulty / 20)):
                 Loot(player, random.randint(1, 10))
         else:
             bored(player)
