@@ -181,7 +181,7 @@ class Paladin(Character):
         self.level = 1
     def smite(self, target):
         damage = self.strike(target)
-        holyDamage = (self.cMana * 2) + damage
+        holyDamage = (self.cMana * 3) + damage
         target.cHealth -= holyDamage
         print(f"Holy light scorches {target.name} for {holyDamage} damage!")
         self.cMana = 0  
@@ -280,7 +280,8 @@ class Snake(Character):
         self.cMana -= manaPoison
         print(f"{self.name}'s fangs inject extra poison into {target.name}!")
     def burninate(self, target):
-        fireDamage = (self.cMana * 2)
+        fireDamage = math.ceil(self.cMana / 4)
+        fireDamage *= self.power
         if target.block == True:
             fireDamage /= target.shield
             fireDamage = math.ceil(fireDamage)
@@ -544,7 +545,9 @@ def spawnEnemy(tier, difficulty, group):
        dScaling = (difficulty - 25) / 5
        enemy.defense += math.ceil(dScaling)
     if difficulty >= 30:
-        hScaling = ((difficulty - 28) * 0.1) + 1
+        hScaling = (difficulty - 28) * (0.1 * (tier + 1))
+        hScaling /= 2
+        hScaling += 1
         enemy.mHealth = math.ceil(enemy.mHealth * hScaling)
         enemy.cHealth = math.ceil(enemy.cHealth * hScaling)
     if difficulty > 30:
@@ -719,6 +722,10 @@ while quit == 0:
     elif choice == "f":
         Loot(player, 3)
         print(player.shield)
+    elif choice == "g":
+        group = 2
+        difficulty = 4 + player.level
+        quit = combat(player, 2, difficulty, group)
     else:
         confirm = str.lower(input("Are you sure you want to quit? y/n: "))
         if confirm == "y":
