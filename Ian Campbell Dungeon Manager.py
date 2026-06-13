@@ -613,7 +613,7 @@ def saveGame(player):
         confirm = input("Are you sure you want to overwrite your save? y/n: ")
     if overwrite == False or confirm == "y":
         with open(os.path.expanduser("~/Desktop/IansDungeonPlayerData.txt"), "w") as x:
-            x.write(f"{player.name};{player.job};{player.mHealth};{player.cHealth};{player.power};{player.defense};{player.shield};{player.mMana};{player.cMana};{player.pList[0]["Quant"]};{player.pList[1]["Quant"]};{player.pList[2]["Quant"]};{player.level};{player.gimmick}")
+            x.write(f"{player.name};{player.job};{player.mHealth};{player.cHealth};{player.power};{player.defense};{player.shield};{player.mMana};{player.cMana};{player.pList[0]["Quant"]};{player.pList[1]["Quant"]};{player.pList[2]["Quant"]};{player.level};{player.gimmick};{player.wPoison}")
         print("Game saved.")
     else:
         print("Save cancelled.")
@@ -642,6 +642,7 @@ def loadGame(player):
                     player.cMana = int(stats[8])
                     player.level = int(stats[12])
                     player.gimmick = int(stats[13])
+                    player.wPoison = int(stats[14])
                     for type in player.pList:
                         type["Quant"] = int(stats[9 + player.pList.index(type)])
         else:
